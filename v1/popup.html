@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Screen Capture</title>
+    <style>
+      img {
+        max-width: 100%;
+        max-height: 400px;
+      }
+      body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center; /* 水平方向中央揃え */
+  align-items: center; /* 垂直方向中央揃え */
+  width: 1000px; /* ビューポートの幅全体 */
+  height: 1000px; /* ビューポートの高さ全体 */
+  background-color: #f0f0f0; /* 背景色（任意） */
+}
+
+video {
+  width: 100%; /* 横幅を100%に */
+  height: auto; /* 高さは自動調整 */
+  max-width: 100vw; /* ビューポートの幅を超えないようにする */
+  max-height: 100vh; /* ビューポートの高さを超えないようにする */
+}
+
+      
+    </style>
+  </head>
+  <body>
+    <h1>Captured Screen</h1>
+    <div id="screenshot-container">
+      <img id="screenshot" src="" alt="Captured Screenshot" />
+    </div>
+    <button id="startCapture">Start Capture</button>
+    <video id="screenVideo" autoplay></video>
+    <script src="popup.js"></script>
+  </body>
+</html>
