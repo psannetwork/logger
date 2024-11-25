@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランダムIDジェネレーター</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <h2>ランダムID管理</h2>
+  <p id="output"></p>
+  
+  <!-- 新しく追加するID入力フィールド -->
+  <div id="sendingIdSection">
+    <label for="sendingIdInput">送信先ID:</label>
+    <input type="text" id="sendingIdInput" placeholder="送信先IDを入力">
+    <button id="saveSendingIdBtn">送信先IDを保存</button>
+  </div>
+
+  <div id="savedIdSection" style="display:none;">
+    <p id="savedIdOutput"></p>
+    <p id="inputtedIdOutput"></p>
+  </div>
+
+  <script src="popup.js"></script>
+
+<body>
+
+</body>
+</html>
