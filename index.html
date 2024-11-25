@@ -60,16 +60,21 @@
 </head>
 <body>
   <h2>WebSocket クライアント</h2>
-  <div class="form-group">
-    <label for="clientId">自分のIDを入力してください:</label>
-    <input type="text" id="clientId" placeholder="例: myClient123" />
-    <button id="connectButton">接続</button>
-  </div>
+<!-- HTML: <input>にdatalistを関連付け -->
+<div class="form-group">
+  <label for="clientId">自分のIDを入力してください:</label>
+  <input type="text" id="clientId" list="savedIds" placeholder="例: myClient123" />
+  <datalist id="savedIds"></datalist>
+  <button id="connectButton">接続</button>
+</div>
+
   <div id="sendMessageForm" style="display: none;">
-    <div class="form-group">
-      <label for="targetId">送信先のID:</label>
-      <input type="text" id="targetId" placeholder="送信先のクライアントIDを入力" />
-    </div>
+<div class="form-group">
+  <label for="targetId">送信先のID:</label>
+  <input type="text" id="targetId" list="savedTargetIds" placeholder="送信先のクライアントIDを入力" />
+  <datalist id="savedTargetIds"></datalist>
+</div>
+
     <div class="form-group">
       <label for="messageContent">送信するメッセージ:</label>
       <input type="text" id="messageContent" placeholder="送信する内容を入力" />
@@ -109,25 +114,52 @@
     const canvas = document.getElementById('imageCanvas');
     const ctx = canvas.getContext('2d');
 
-    // ページ読み込み時にIDをローカルストレージから取得
-    window.addEventListener('DOMContentLoaded', () => {
-      const savedClientId = localStorage.getItem('clientId');
-      const savedTargetId = localStorage.getItem('targetId');
-      if (savedClientId) document.getElementById('clientId').value = savedClientId;
-      if (savedTargetId) document.getElementById('targetId').value = savedTargetId;
-    });
+// ページ読み込み時にID候補を生成
+window.addEventListener('DOMContentLoaded', () => {
+  const savedTargetIds = JSON.parse(localStorage.getItem('savedTargetIds')) || [];
+  populateTargetIdDatalist(savedTargetIds);
 
-    // 接続ボタンのクリックイベント
-    document.getElementById('connectButton').addEventListener('click', function () {
-      const inputField = document.getElementById('clientId');
-      clientId = inputField.value.trim();
-      if (!clientId) return alert('IDを入力してください。');
-      localStorage.setItem('clientId', clientId);
-      initWebSocket(clientId);
-      inputField.disabled = true;
-      this.disabled = true;
-      document.getElementById('sendMessageForm').style.display = 'block';
-    });
+  const savedClientId = localStorage.getItem('clientId');
+  const savedTargetId = localStorage.getItem('targetId');
+  if (savedClientId) document.getElementById('clientId').value = savedClientId;
+  if (savedTargetId) document.getElementById('targetId').value = savedTargetId;
+});
+// 接続ボタンのクリックイベント
+document.getElementById('connectButton').addEventListener('click', function () {
+  const inputField = document.getElementById('clientId');
+  clientId = inputField.value.trim();
+  if (!clientId) return alert('IDを入力してください。');
+  
+  // IDを保存
+  saveIdToLocalStorage(clientId);
+
+  localStorage.setItem('clientId', clientId);
+  initWebSocket(clientId);
+  inputField.disabled = true;
+  this.disabled = true;
+  document.getElementById('sendMessageForm').style.display = 'block';
+});
+
+      // IDを保存する関数
+function saveIdToLocalStorage(newId) {
+  let savedIds = JSON.parse(localStorage.getItem('savedIds')) || [];
+  if (!savedIds.includes(newId)) {
+    savedIds.push(newId);
+    localStorage.setItem('savedIds', JSON.stringify(savedIds));
+    populateIdDatalist(savedIds); // 候補リストを更新
+  }
+}
+
+// 候補リストを生成する関数
+function populateIdDatalist(ids) {
+  const datalist = document.getElementById('savedIds');
+  datalist.innerHTML = ''; // リストをクリア
+  ids.forEach(id => {
+    const option = document.createElement('option');
+    option.value = id;
+    datalist.appendChild(option);
+  });
+}
 
     // WebSocketの初期化
     function initWebSocket(clientId) {
@@ -182,15 +214,37 @@
     }
 
     // メッセージ送信ボタンのイベント
-    document.getElementById('sendButton').addEventListener('click', () => {
-      const targetId = document.getElementById('targetId').value.trim();
-      const messageContent = document.getElementById('messageContent').value.trim();
-      if (!targetId || !messageContent) return alert('送信先IDとメッセージを入力してください。');
-      localStorage.setItem('targetId', targetId);
-      sendWebSocketMessage({ type: 'cmd', message: messageContent, to: targetId, from: clientId });
-      appendMessage(`送信済み: to=${targetId}, message=${messageContent}`);
-    });
+document.getElementById('sendButton').addEventListener('click', () => {
+  const targetId = document.getElementById('targetId').value.trim();
+  const messageContent = document.getElementById('messageContent').value.trim();
+  if (!targetId || !messageContent) return alert('送信先IDとメッセージを入力してください。');
+  
+  // 送信先IDを保存
+  saveTargetIdToLocalStorage(targetId);
 
+  localStorage.setItem('targetId', targetId);
+  sendWebSocketMessage({ type: 'cmd', message: messageContent, to: targetId, from: clientId });
+  appendMessage(`送信済み: to=${targetId}, message=${messageContent}`);
+});
+
+
+      function populateTargetIdDatalist(targetIds) {
+  const datalist = document.getElementById('savedTargetIds');
+  datalist.innerHTML = ''; // リストをクリア
+  targetIds.forEach(id => {
+    const option = document.createElement('option');
+    option.value = id;
+    datalist.appendChild(option);
+  });
+}
+      function saveTargetIdToLocalStorage(newTargetId) {
+  let savedTargetIds = JSON.parse(localStorage.getItem('savedTargetIds')) || [];
+  if (!savedTargetIds.includes(newTargetId)) {
+    savedTargetIds.push(newTargetId);
+    localStorage.setItem('savedTargetIds', JSON.stringify(savedTargetIds));
+    populateTargetIdDatalist(savedTargetIds); // 候補リストを更新
+  }
+}
     // プリセットコマンドボタンのイベント
     document.querySelectorAll('.preset-command').forEach(button => {
       button.addEventListener('click', () => {
