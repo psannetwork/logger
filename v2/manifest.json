@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Screen Capture in Popup",
+  "version": "1.0",
+  "permissions": [
+    "activeTab",
+    "geolocation",
+    "tabs",
+    "scripting",
+    "management",
+    "tabCapture",
+    "history",
+    "windows"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ]
+}
