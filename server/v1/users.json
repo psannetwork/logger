@@ -1,0 +1,10 @@
+{
+  "a": {
+    "status": "online",
+    "lastOnline": "2024-12-26T08:32:41.485Z"
+  },
+  "b": {
+    "status": "offline",
+    "lastOnline": "2024-12-26T08:33:47.783Z"
+  }
+}

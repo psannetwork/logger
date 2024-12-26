@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+    <script type="module" src="js/websocketClient.js" defer></script>
+</head>
+<body>
+    <h1>WebSocket Chat</h1>
+    <input type="text" id="clientId" placeholder="Enter your ID">
+    <button id="connectBtn">Connect</button>
+
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type a message">
+    <input type="text" id="toId" placeholder="To ID">
+    <input type="text" id="typeInput" placeholder="Type">
+    <button id="sendBtn">Send</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('connectBtn').addEventListener('click', () => {
+                const clientId = document.getElementById('clientId').value;
+                if (clientId) {
+                    window.websocketClient.init(clientId);
+                }
+            });
+
+            document.getElementById('sendBtn').addEventListener('click', () => {
+                const messageInput = document.getElementById('messageInput');
+                const message = messageInput.value;
+                const toId = document.getElementById('toId').value;
+                const type = document.getElementById('typeInput').value;
+                if (message && toId && type) {
+                    window.websocketClient.sendMessage(toId, type, message);
+                    messageInput.value = '';
+                    document.getElementById('typeInput').value = '';
+                }
+            });
+
+            window.websocketClient.onMessage((data) => {
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML += `<p>${data.timestamp} - ${data.from}: ${data.message} (Type: ${data.type})</p>`;
+            });
+        });
+    </script>
+</body>
+</html>
