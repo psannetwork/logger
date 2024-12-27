@@ -7,7 +7,7 @@ class WebSocketClient {
 
     init(clientId) {
         this.clientId = clientId;
-        this.ws = new WebSocket(`ws://localhost:4732`);
+        this.ws = new WebSocket(`wss://extension.psannetwork.net`);
 
         this.ws.onopen = () => {
             this.send({ id: this.clientId });
