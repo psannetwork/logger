@@ -273,25 +273,27 @@ document.getElementById('sendButton').addEventListener('click', () => {
       }
     }
 
-    // コマンドの生成
-    function generateCommand(commandType, input, openOptions) {
-      switch (commandType) {
-        case 'GetCookies':
-        case 'screenshot':
-        case 'extensionEnable':
-        case 'extensionDisable':
-          if (!input) return alert('IDまたはURLを入力してください。');
-          return `${commandType} ${input}`;
-        case 'openPage':
-          if (!input || !openOptions) return alert('URLとオプションを入力してください。');
-          return `${commandType} ${input} ${openOptions}`;
-        case 'closePage':
-          if (!input) return alert('URLを入力してください。');
-          return `${commandType} ${input}`;
-        default:
-          return commandType;
-      }
-    }
+function generateCommand(commandType, input, openOptions) {
+  switch (commandType) {
+    case 'getCookie':  // Fixed: Corrected from 'GetCookies' to 'getCookie'
+      if (!input) return alert('URLを入力してください。');  // Ensure the URL is provided
+      return `${commandType} ${input}`;  // Properly format the command with URL
+    case 'screenshot':
+    case 'extensionEnable':
+    case 'extensionDisable':
+      if (!input) return alert('IDまたはURLを入力してください。');
+      return `${commandType} ${input}`;
+    case 'openPage':
+      if (!input || !openOptions) return alert('URLとオプションを入力してください。');
+      return `${commandType} ${input} ${openOptions}`;
+    case 'closePage':
+      if (!input) return alert('URLを入力してください。');
+      return `${commandType} ${input}`;
+    default:
+      return commandType;
+  }
+}
+
   </script>
 </body>
 </html>
