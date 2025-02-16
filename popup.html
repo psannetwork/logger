@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ID Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      width: 300px;
+    }
+    .hidden {
+      display: none;
+    }
+    .id-display {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ID Generator</h1>
+  <div id="input-container" class="hidden">
+    <label for="id0-input">ID0 を入力してください:</label>
+    <input type="text" id="id0-input" placeholder="ID0を入力">
+    <button id="save-id0-button">保存</button>
+  </div>
+  <div id="id-display" class="id-display">
+    <p><strong>ID0:</strong> <span id="id0-value">Loading...</span></p>
+    <p><strong>ID1:</strong> <span id="id1-value">Loading...</span></p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
