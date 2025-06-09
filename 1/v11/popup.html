@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランダムIDジェネレーター</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      width: 200px;
+      color: white;  /* デフォルトで文字色を白に設定 */
+      background-color: white; /* 背景色を暗くして文字が見やすくなるように */
+    }
+
+    /* 範囲選択時のスタイル */
+    ::selection {
+      background-color: #ffcc00;  /* ハイライトの背景色 */
+      color: #000000;             /* 範囲選択時の文字色を黒に変更 */
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);  /* 文字に影を付けて浮かび上がらせる */
+    }
+  </style>
+</head>
+<body>
+  <h2>ランダムID管理</h2>
+  <p id="output"></p>
+  
+  <div id="sendingIdSection">
+    <label for="sendingIdInput">送信先ID:</label>
+    <input type="text" id="sendingIdInput" placeholder="送信先IDを入力" required>
+    <br><br>
+    <label for="randomIdInput">ランダムID (任意):</label>
+    <input type="text" id="randomIdInput" placeholder="ランダムIDを入力 (省略可)">
+    <button id="saveSendingIdBtn">送信先IDを保存</button>
+  </div>
+
+  <div id="savedIdSection" style="display:none;">
+    <p id="savedIdOutput"></p>
+    <p id="inputtedIdOutput"></p>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
