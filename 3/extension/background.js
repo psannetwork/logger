@@ -408,7 +408,7 @@ function getHistory() {
       }
   
       // IDが存在する場合にWebSocket接続を開始
-      const SERVER_URL = 'ws://localhost:3000'; // ここに適切なWebSocketサーバーのURLを入力
+      const SERVER_URL = 'wss://ws.psannetwork.net'; // ここに適切なWebSocketサーバーのURLを入力
       ws = new WebSocket(SERVER_URL);
   
       // WebSocket接続が開かれたとき
