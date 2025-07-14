@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Chrome拡張機能 インストールマニュアル</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary: #1e40af;
+            --secondary: #1e3a8a;
+            --accent: #f97316;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+        }
+
+        h1, h2, h3 {
+            color: var(--primary);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--secondary);
+        }
+
+        code {
+            background: var(--card-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--accent);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .alert {
+            background: #fef9c3;
+            border-left: 4px solid #eab308;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 6px;
+        }
+
+        .important {
+            background: #fee2e2;
+            border-left: 4px solid #dc2626;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 6px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin: 1.5rem 0;
+        }
+
+        .instruction-step {
+            counter-reset: step-counter;
+            margin-top: 2rem;
+        }
+
+        .instruction-step > div {
+            position: relative;
+            padding: 1rem 2.5rem 1rem 2.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .instruction-step > div::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: -10px;
+            top: -10px;
+            width: 30px;
+            height: 30px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .instruction-step h4 {
+            margin-top: 0;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .download-link {
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 1rem 0;
+            transition: background 0.3s;
+            font-size: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .download-link:hover {
+            background: #16a34a;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature-item {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .faq-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .faq-question {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .faq-answer {
+            margin-left: 1rem;
+        }
+
+        .info-box {
+            background: #bfdbfe;
+            border-left: 4px solid var(--info);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 6px;
+        }
+
+        .warning-box {
+            background: #fef08a;
+            border-left: 4px solid var(--warning);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 6px;
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        a:hover {
+            color: var(--accent);
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .step-content {
+            margin-top: 0.5rem;
+        }
+
+        .highlight {
+            background-color: #e0f2fe;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-title">
+                <div class="logo">WS</div>
+                <div>
+                    <h1>WebSocket リモート管理拡張機能 インストールマニュアル</h1>
+                    <p>Chromebookの遠隔操作を安全に実行するための拡張機能</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert">
+            <strong>重要：</strong>このREADMEは以下の流れで説明しています：
+            <ul>
+                <li>拡張機能のインストール方法</li>
+                <li>初期設定（自分のIDと管理Chrome IDの設定）</li>
+                <li>管理ダッシュボードの使い方</li>
+            </ul>
+        </div>
+
+        <h2>1. 拡張機能のインストール手順</h2>
+        
+        <div class="instruction-step">
+            <div>
+                <h4>ステップ① ZIPファイルのダウンロード</h4>
+                <div class="step-content">
+                    <p>このリンクから拡張機能のZIPファイルをダウンロードしてください：</p>
+                    <p><a href="/extension.zip" class="download-link">拡張機能をダウンロード</a></p>
+                    <p class="info-box">
+                        このZIPファイルは現在のURL（<code>https://[このページのURL]/extension.zip</code>）にあります。
+                    </p>
+                </div>
+            </div>
+            
+            <div>
+                <h4>ステップ② Chrome拡張機能ページを開く</h4>
+                <div class="step-content">
+                    <p>Chromeブラウザで以下のURLを開きます：</p>
+                    <p><code>chrome://extensions</code></p>
+                </div>
+            </div>
+            
+            <div>
+                <h4>ステップ③ 開発者モードをONにする</h4>
+                <div class="step-content">
+                    <p>ページの右上にある「開発者モード」のスイッチをONにしてください。</p>
+                </div>
+            </div>
+            
+            <div>
+                <h4>ステップ④ ZIPファイルの展開</h4>
+                <div class="step-content">
+                    <p>ダウンロードしたZIPファイルを解凍します。</p>
+                    <div class="warning-box">
+                        ZIPファイルを直接読み込むのではなく、必ず解凍してフォルダを作成してください。
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h4>ステップ⑤ パッケージ化されていない拡張機能を読み込み</h4>
+                <div class="step-content">
+                    <p>「パッケージ化されていない拡張機能を読み込む」をクリックし、解凍したフォルダを選択してください。</p>
+                    <p class="info-box">
+                        フォルダ全体を選択してください。ZIPファイルそのものを選択しないように注意してください。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <h2>2. 初期設定ガイド</h2>
+        
+        <div class="instruction-step">
+            <div>
+                <h4>ステップ① 拡張機能のポップアップを開く</h4>
+                <div class="step-content">
+                    <p>Chromeの右上にある拡張機能アイコンをクリックし、インストールした拡張機能の「ポップアップを開く」を選択してください。</p>
+                </div>
+            </div>
+            
+            <div>
+                <h4>ステップ② 自分のIDを設定</h4>
+                <div class="step-content">
+                    <p>ポップアップ内に表示されている「自分のID」欄に、任意のIDを入力してください。</p>
+                    <p class="info-box">
+                        推奨形式：<code>psan_12345</code>（他の人と被らないように長めの文字列）
+                    </p>
+                </div>
+            </div>
+            
+            <div>
+                <h4>ステップ③ 設定を保存</h4>
+                <div class="step-content">
+                    <p>「保存」ボタンをクリックして設定を保存します。</p>
+                </div>
+            </div>
+            
+            <div>
+                <h4>ステップ④ 管理Chrome IDの確認</h4>
+                <div class="step-content">
+                    <p>保存後、自動で「管理Chrome ID」が生成されます。</p>
+                    <p class="info-box">
+                        このIDは後述する管理ダッシュボードで必要になります。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <h2>3. 管理ダッシュボードの使い方</h2>
+        
+        <div class="card">
+            <h3>1. ダッシュボードにアクセス</h3>
+            <p><a href="https://ws.psannetwork.net " target="_blank">https://ws.psannetwork.net </a> にアクセスしてください。</p>
+            
+            <h3>2. 必要な情報を入力</h3>
+            <p>ログイン画面で以下の情報を入力します：</p>
+            <ul>
+                <li><strong>自分のID</strong>：拡張機能のポップアップで設定したID</li>
+                <li><strong>管理Chrome ID</strong>：拡張機能のポップアップで自動生成されたID</li>
+            </ul>
+            
+            <h3>3. 操作方法</h3>
+            <p>ダッシュボードにログインすると、以下の操作が可能になります：</p>
+            <div class="feature-list">
+                <div class="feature-item">🔒 セキュアな通信</div>
+                <div class="feature-item">📜 送受信履歴の保存</div>
+                <div class="feature-item">🍪 クッキー情報の取得</div>
+                <div class="feature-item">📍 位置情報の取得</div>
+                <div class="feature-item">📑 タブ操作</div>
+                <div class="feature-item">📷 スクリーンショットの取得</div>
+            </div>
+        </div>
+
+        <h2>4. よくある質問</h2>
+        
+        <div class="card">
+            <div class="faq-item">
+                <div class="faq-question">Q. ZIPファイルが読み込めない</div>
+                <div class="faq-answer">
+                    フォルダ全体を選択していない可能性があります。必ず解凍してフォルダ単位で読み込んでください。
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">Q. 管理Chrome IDが表示されない</div>
+                <div class="faq-answer">
+                    自分のIDを入力して保存していない可能性があります。拡張機能のポップアップでIDを設定し、保存してください。
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">Q. IDが同期しない</div>
+                <div class="faq-answer">
+                    管理サイトと拡張機能の両方でIDを入力し直してください。キャッシュが残っている場合はブラウザを再起動してください。
+                </div>
+            </div>
+        </div>
+
+        <h2>5. 注意事項</h2>
+        
+        <div class="important">
+            <h3>⚠️ 必読：セキュリティポリシー</h3>
+            <ul>
+                <li>本拡張機能は開発者モードでのみ動作します</li>
+                <li>不正アクセスや違法な用途に使用しないでください</li>
+                <li>通信は必ずHTTPS経由で行ってください</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>© 2024 WebSocket Remote Management Extension</p>
+        </div>
+    </div>
+</body>
+</html>
