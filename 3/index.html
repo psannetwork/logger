@@ -596,7 +596,7 @@
 
     // WebSocket初期化
     function initWebSocket(clientId) {
-      const SERVER_URL = 'ws://localhost:3000';
+      const SERVER_URL = 'wss://ws.psannetwork.net';
       ws = new WebSocket(SERVER_URL);
       ws.onopen = () => {
         appendMessage('サーバーに接続しました');
