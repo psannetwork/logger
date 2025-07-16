@@ -165,6 +165,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+app.get('/README', (req, res) => {
+  res.sendFile(path.join(__dirname, 'README.html'));
+});
+
 // /ids エンドポイントの追加
 app.get('/ids', (req, res) => {
     const ids = Object.keys(clientHistory);
